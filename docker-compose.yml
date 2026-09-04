@@ -5,10 +5,5 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-    networks:
-      - minecraft
-
-networks:
-  minecraft:
-    external: true
-    name: ${MINECRAFT_NETWORK}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

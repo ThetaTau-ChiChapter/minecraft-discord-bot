@@ -1,0 +1,9 @@
+services:
+  bot:
+    networks:
+      - minecraft
+
+networks:
+  minecraft:
+    external: true
+    name: ${MINECRAFT_NETWORK}

@@ -9,6 +9,26 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 
 struct Data {
     rcon: Mutex<RconConnection>,
+    rcon_address: String,
+    rcon_password: String,
+}
+
+impl Data {
+    /// Run an RCON command, transparently reconnecting once if the server
+    /// closed the connection (e.g. after sitting idle) before retrying.
+    async fn rcon_cmd(&self, command: &str) -> Result<String, Error> {
+        let mut rcon = self.rcon.lock().await;
+
+        match rcon.cmd(command).await {
+            Err(rcon::Error::Io(_)) => {
+                *rcon =
+                    Connection::<TcpStream>::connect(&self.rcon_address, &self.rcon_password)
+                        .await?;
+                Ok(rcon.cmd(command).await?)
+            }
+            result => Ok(result?),
+        }
+    }
 }
 
 /// Whitelist a player on the Minecraft server
@@ -17,10 +37,11 @@ async fn whitelist(
     ctx: Context<'_>,
     #[description = "Player name to whitelist"] player: String,
 ) -> Result<(), Error> {
-    let response = {
-        let mut rcon = ctx.data().rcon.lock().await;
-        rcon.cmd(&format!("whitelist add {player}")).await?
-    };
+    ctx.defer_ephemeral().await?;
+    let response = ctx
+        .data()
+        .rcon_cmd(&format!("whitelist add {player}"))
+        .await?;
 
     ctx.say(format!("```\n{response}\n```")).await?;
     Ok(())
@@ -52,6 +73,8 @@ async fn main() -> Result<(), Error> {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
                     rcon: Mutex::new(rcon),
+                    rcon_address,
+                    rcon_password,
                 })
             })
         })
