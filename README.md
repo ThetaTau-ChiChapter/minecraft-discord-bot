@@ -54,17 +54,3 @@ just run -n
 ```
 
 This uses `docker-compose.network.yml` as an overlay on top of the base `docker-compose.yml`, so the network is only attached when explicitly requested.
-
-## Applying code changes
-
-`just run` only starts the container from whatever image already exists — it won't pick up code changes. After editing the bot's source, rebuild the image and restart with:
-
-```
-just rebuild
-```
-
-or, if you also need the Minecraft Docker network:
-
-```
-just rebuild -n
-```
