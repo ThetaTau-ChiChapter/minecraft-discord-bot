@@ -60,9 +60,10 @@ pub async fn balance(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// Smite a player, charging them $SMITE_COST if it succeeds
+/// Smite a player, charging *you* $SMITE_COST if it succeeds
 ///
-/// Asks for confirmation before actually performing the smite.
+/// Asks for confirmation before actually performing the smite. Requires you to have a Minecraft
+/// account linked via `/register_minecraft`, since that's the account that gets charged.
 #[poise::command(slash_command)]
 pub async fn smite(
     ctx: Context<'_>,
@@ -70,18 +71,30 @@ pub async fn smite(
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
+    let discord_id = ctx.author().id.get() as i64;
+    let user = users::Entity::find()
+        .filter(users::Column::DiscordId.eq(discord_id))
+        .one(&ctx.data().db)
+        .await?;
+
+    let Some(payer) = user.and_then(|user| user.minecraft_username) else {
+        ctx.send(poise::CreateReply::default().embed(not_registered_embed()).ephemeral(true))
+            .await?;
+        return Ok(());
+    };
+
     ctx.send(
         poise::CreateReply::default()
             .embed(
                 CreateEmbed::new()
                     .title("Confirm Smite")
                     .description(format!(
-                        "Are you sure you want to smite `{player}`? This will charge them ${SMITE_COST} if it succeeds."
+                        "Are you sure you want to smite `{player}`? This will charge your linked account (`{payer}`) ${SMITE_COST} if it succeeds."
                     ))
                     .colour(Colour::ORANGE),
             )
             .components(vec![CreateActionRow::Buttons(vec![
-                create_dbutton!(confirm_smite, player.clone())
+                create_dbutton!(confirm_smite, player.clone(), payer)
                     .label("Smite")
                     .style(ButtonStyle::Danger),
                 create_dbutton!(cancel_smite, player).label("Cancel"),
@@ -93,8 +106,8 @@ pub async fn smite(
     Ok(())
 }
 
-/// Button press to confirm a pending smite: checks the target can afford it, performs the
-/// smite, and only then charges them.
+/// Button press to confirm a pending smite: checks `payer` (the Minecraft account linked to
+/// whoever ran `/smite`) can afford it, performs the smite, and only then charges them.
 #[dbutton]
 pub async fn confirm_smite(
     ctx: &poise::serenity_prelude::Context,
@@ -102,10 +115,11 @@ pub async fn confirm_smite(
     _framework: poise::FrameworkContext<'_, State, Error>,
     state: &State,
     player: String,
+    payer: String,
 ) -> Result<(), Error> {
     defer_response(ctx, interaction).await?;
 
-    let embed = perform_smite(state, &player).await?;
+    let embed = perform_smite(state, &player, &payer).await?;
 
     interaction
         .edit_response(
@@ -146,21 +160,23 @@ pub async fn cancel_smite(
     Ok(())
 }
 
-/// Check `player` can afford [`SMITE_COST`], smite them, and - only if that succeeds - charge
-/// them. Returns the result embed to show the user.
-async fn perform_smite(state: &State, player: &str) -> Result<CreateEmbed, Error> {
-    let balance_response = state.rcon_cmd(&format!("balance {player}")).await?;
+/// Check `payer` (the account linked to whoever ran `/smite`) can afford [`SMITE_COST`], smite
+/// `target`, and - only if that succeeds - charge `payer`. Returns the result embed to show.
+async fn perform_smite(state: &State, target: &str, payer: &str) -> Result<CreateEmbed, Error> {
+    let balance_response = state.rcon_cmd(&format!("balance {payer}")).await?;
     let Some(balance) = parse_dollar_amount(&balance_response) else {
-        return Ok(smite_error_embed("Error: Player not found."));
+        return Ok(smite_error_embed(&format!(
+            "Could not determine `{payer}`'s balance. Have you joined the server yet?"
+        )));
     };
 
     if balance < SMITE_COST as f64 {
         return Ok(smite_error_embed(&format!(
-            "`{player}` can't afford to be smitten - they only have ${balance:.2} and smiting costs ${SMITE_COST}."
+            "You can't afford to smite `{target}` - `{payer}` only has ${balance:.2} and smiting costs ${SMITE_COST}."
         )));
     }
 
-    let smite_response = state.rcon_cmd(&format!("smite {player}")).await?;
+    let smite_response = state.rcon_cmd(&format!("smite {target}")).await?;
     let smite_response = smite_response.trim();
 
     if smite_response.starts_with("Error") {
@@ -168,13 +184,13 @@ async fn perform_smite(state: &State, player: &str) -> Result<CreateEmbed, Error
     }
 
     state
-        .rcon_cmd(&format!("eco take {player} {SMITE_COST}"))
+        .rcon_cmd(&format!("eco take {payer} {SMITE_COST}"))
         .await?;
 
     Ok(CreateEmbed::new()
         .title("Smitten!")
         .description(smite_response)
-        .field("Cost", format!("${SMITE_COST}"), true)
+        .field("Charged", format!("${SMITE_COST} taken from `{payer}`"), true)
         .colour(Colour::DARK_PURPLE))
 }
 
