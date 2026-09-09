@@ -8,7 +8,7 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    dotenvy::dotenv().ok();
+    let path = std::env::current_dir()?;
 
     let conf = config::Config::parse("./config")?;
 

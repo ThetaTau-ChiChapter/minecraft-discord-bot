@@ -79,6 +79,7 @@ fn list_directory_files(
                 collect_files_recursively(&path, prefix, extension, files)?;
                 continue;
             }
+            println!("Found file: {}", path.display());
 
             let matches_prefix = path
                 .file_name()
@@ -100,5 +101,6 @@ fn list_directory_files(
     let mut files = Vec::new();
     collect_files_recursively(std::path::Path::new(dir), prefix, extension, &mut files)?;
     files.sort();
+    println!("Found config files: {:?}", files);
     Ok(files)
 }
