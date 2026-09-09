@@ -68,7 +68,7 @@ pub async fn smite(
     ctx: Context<'_>,
     #[description = "Minecraft username to smite"] player: String,
 ) -> Result<(), Error> {
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     ctx.send(
         poise::CreateReply::default()

@@ -45,19 +45,40 @@ impl State {
 
     /// Run an RCON command, transparently reconnecting once if the server
     /// closed the connection (e.g. after sitting idle) before retrying.
+    ///
+    /// Strips Minecraft's `§`-prefixed color/formatting codes from the response, since the
+    /// server (and plugins like economy ones) commonly colorize their chat output.
     pub async fn rcon_cmd(&self, command: &str) -> Result<String, Error> {
         let mut rcon = self.rcon.lock().await;
 
-        match rcon.cmd(command).await {
+        let response = match rcon.cmd(command).await {
             Err(rcon::Error::Io(_)) => {
                 *rcon =
                     Connection::<TcpStream>::connect(&self.rcon_address, &self.rcon_password)
                         .await?;
-                Ok(rcon.cmd(command).await?)
+                rcon.cmd(command).await?
             }
-            result => Ok(result?),
+            result => result?,
+        };
+
+        Ok(strip_color_codes(&response))
+    }
+}
+
+/// Strip Minecraft color/formatting codes (a `§` followed by one character) from `text`.
+fn strip_color_codes(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    let mut chars = text.chars();
+
+    while let Some(c) = chars.next() {
+        if c == '§' {
+            chars.next();
+        } else {
+            result.push(c);
         }
     }
+
+    result
 }
 
 /// Create a new Postgresql connection
