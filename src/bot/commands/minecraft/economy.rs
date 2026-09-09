@@ -85,7 +85,8 @@ pub async fn smite(
                     .label("Smite")
                     .style(ButtonStyle::Danger),
                 create_dbutton!(cancel_smite, player).label("Cancel"),
-            ])]),
+            ])])
+            .ephemeral(true),
     )
     .await?;
 
@@ -136,7 +137,8 @@ pub async fn cancel_smite(
                             .description(format!("Smiting `{player}` was cancelled."))
                             .colour(Colour::LIGHT_GREY),
                     )
-                    .components(vec![]),
+                    .components(vec![])
+                    .ephemeral(true),
             ),
         )
         .await?;

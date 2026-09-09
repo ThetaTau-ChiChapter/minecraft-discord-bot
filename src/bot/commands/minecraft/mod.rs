@@ -48,7 +48,7 @@ pub async fn whitelist(
 /// List players currently online on the Minecraft server
 #[poise::command(slash_command)]
 pub async fn online(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let response = ctx.data().rcon_cmd("list").await?;
     let mut lines = response.lines().map(str::trim).filter(|line| !line.is_empty());
@@ -67,7 +67,7 @@ pub async fn online(ctx: Context<'_>) -> Result<(), Error> {
         embed = embed.field(capitalize(group.trim()), players.trim(), false);
     }
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
 
     Ok(())
 }
