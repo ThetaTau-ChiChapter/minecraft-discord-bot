@@ -20,7 +20,9 @@ pub async fn start_bot(
         .options(poise::FrameworkOptions {
             commands: vec![
                 commands::minecraft::whitelist(),
+                commands::minecraft::online(),
                 commands::minecraft::register_minecraft(),
+                commands::minecraft::smite(),
                 commands::bryce::bryce(),
                 commands::minecraft::balance(),
             ],

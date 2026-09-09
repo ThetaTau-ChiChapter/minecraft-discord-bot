@@ -1,13 +1,13 @@
 pub mod economy;
 mod utils;
 
-pub use economy::balance;
+pub use economy::{balance, smite};
 
 use dbutton_macro::{create_dbutton, dbutton};
 use poise::{serenity_prelude::{
     ActionRowComponent, Colour, ComponentInteraction, CreateActionRow, CreateEmbed,
     CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal,
-    InputTextStyle, ModalInteraction,
+    EditInteractionResponse, InputTextStyle, ModalInteraction,
 }};
 use rand::RngExt;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
@@ -45,6 +45,41 @@ pub async fn whitelist(
     Ok(())
 }
 
+/// List players currently online on the Minecraft server
+#[poise::command(slash_command)]
+pub async fn online(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    let response = ctx.data().rcon_cmd("list").await?;
+    let mut lines = response.lines().map(str::trim).filter(|line| !line.is_empty());
+
+    let summary = lines.next().unwrap_or("Unable to fetch online players.");
+
+    let mut embed = CreateEmbed::new()
+        .title("Online Players")
+        .description(summary)
+        .colour(Colour::BLURPLE);
+
+    // Remaining lines are of the form `{group}: {comma, separated, names}` (grouped by
+    // permission group, e.g. `default: DoctaJ211, rafiki739`). Show each group as its own field.
+    for line in lines {
+        let (group, players) = line.split_once(':').unwrap_or(("Players", line));
+        embed = embed.field(capitalize(group.trim()), players.trim(), false);
+    }
+
+    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+
+    Ok(())
+}
+
+/// Capitalize the first character of `text`, leaving the rest untouched.
+fn capitalize(text: &str) -> String {
+    let mut chars = text.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+        None => String::new(),
+    }
+}
 
 /// Register a player with their Minecraft account
 #[poise::command(slash_command)]
@@ -98,6 +133,31 @@ pub async fn send_new_code(
     defer_response(ctx, interaction).await?;
 
     generate_store_and_send_registration_code(state, &player).await?;
+
+    interaction
+        .edit_response(
+            ctx.http.clone(),
+            EditInteractionResponse::new()
+                .embed(
+                    CreateEmbed::new()
+                        .title("Minecraft Registration")
+                        .description(format!(
+                            "A new registration code has been messaged in game to the Minecraft account `{player}`."
+                        ))
+                        .field(
+                            "Next steps",
+                            "Enter the code below to link your Discord account to that Minecraft account.",
+                            false,
+                        )
+                        .colour(Colour::DARK_GREEN),
+                )
+                .components(vec![CreateActionRow::Buttons(vec![
+                    create_dbutton!(send_new_code, player).label("Send New Code"),
+                    create_dbutton!(enter_code).label("Enter Code"),
+                ])]),
+        )
+        .await?;
+
     Ok(())
 }
 
@@ -269,6 +329,10 @@ async fn generate_store_and_send_registration_code(
             .await?;
         }
     }
+
+    state.rcon_cmd(&format!(
+        "tellraw {minecraft_username} {{\"text\":\"Your registration code is: {code}\",\"color\":\"green\"}}"
+    )).await?;
 
     Ok(())
 }

@@ -6,7 +6,9 @@ use crate::{bot::commands, state::State};
 /// Main event handler
 #[dbutton_macro::event_handler(
     crate::bot::commands::minecraft::send_new_code,
-    crate::bot::commands::minecraft::enter_code
+    crate::bot::commands::minecraft::enter_code,
+    crate::bot::commands::minecraft::economy::confirm_smite,
+    crate::bot::commands::minecraft::economy::cancel_smite
 )]
 pub async fn event_handler(
     ctx: &poise::serenity_prelude::Context,
