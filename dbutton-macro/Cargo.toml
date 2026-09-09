@@ -1,0 +1,16 @@
+[package]
+name = "dbutton-macro"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "dbutton_macro"
+path = "src/lib.rs"
+proc-macro = true
+
+[dependencies]
+base64 = "0.22.1"
+poise = "0.6.1"
+quote = "1.0.45"
+syn = { version = "2.0.117", features = ["extra-traits"] }
+wincode = { version = "0.4.8", features = ["derive"] }

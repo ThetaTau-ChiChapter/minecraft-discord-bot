@@ -1,11 +1,30 @@
+[workspace]
+members = ["dbutton-core", "dbutton-macro"]
+
 [package]
 name = "minecraft-bot"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Local dependencies
+dbutton-core = { path = "./dbutton-core" }
+dbutton-macro = { path = "./dbutton-macro" }
+# External dependencies
 poise = "0.6"
 tokio = { version = "1", features = ["full"] }
 rcon = { version = "0.6", features = ["rt-tokio"] }
 dotenvy = "0.15"
 anyhow = "1"
+sea-orm = "2.0.2"
+serde = "1.0.229"
+figment = { version = "0.10.19", default-features = false, features = [
+    "env",
+    "yaml",
+] }
+sea-orm-migration = "2.0.2"
+uuid = { version = "1.26.0", features = ["v4"] }
+tracing = "0.1.44"
+rand = "0.10.2"
+base64 = "0.23.1"
+wincode = { version = "0.4.8", features = ["derive", "uuid"] }
