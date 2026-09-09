@@ -22,6 +22,7 @@ pub async fn start_bot(
                 commands::minecraft::whitelist(),
                 commands::minecraft::register_minecraft(),
                 commands::bryce::bryce(),
+                commands::minecraft::balance(),
             ],
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler::event_handler(ctx, event, framework, data))
