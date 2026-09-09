@@ -18,7 +18,11 @@ pub async fn start_bot(
     let setup_config = config.clone();
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![commands::whitelist(), commands::register_minecraft()],
+            commands: vec![
+                commands::minecraft::whitelist(),
+                commands::minecraft::register_minecraft(),
+                commands::bryce::bryce(),
+            ],
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler::event_handler(ctx, event, framework, data))
             },

@@ -1754,7 +1754,6 @@ dependencies = [
  "base64 0.23.1",
  "dbutton-core",
  "dbutton-macro",
- "dotenvy",
  "figment",
  "poise",
  "rand 0.10.2",
@@ -2546,6 +2545,8 @@ dependencies = [
  "sea-schema",
  "serde",
  "serde_json",
+ "sqlx",
+ "sqlx-core",
  "strum",
  "thiserror 2.0.19",
  "time",
@@ -2662,7 +2663,9 @@ checksum = "3553c77dceed56e95bece9ea876c4dd67ca879ef51055a0b97a7bb89a8ae4fed"
 dependencies = [
  "async-trait",
  "sea-query",
+ "sea-query-sqlx",
  "sea-schema-derive",
+ "sqlx",
 ]
 
 [[package]]
@@ -2981,15 +2984,19 @@ dependencies = [
  "memchr",
  "percent-encoding",
  "rust_decimal",
+ "rustls 0.23.42",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "smallvec",
  "thiserror 2.0.19",
  "time",
+ "tokio",
+ "tokio-stream",
  "tracing",
  "url",
  "uuid",
+ "webpki-roots 1.0.9",
 ]
 
 [[package]]
@@ -3026,6 +3033,7 @@ dependencies = [
  "sqlx-postgres",
  "sqlx-sqlite",
  "syn 2.0.119",
+ "tokio",
  "url",
 ]
 
@@ -3409,6 +3417,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
  "rustls 0.23.42",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3d06f0b082ba57c26b79407372e57cf2a1e28124f78e9479fe80322cf53420b"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
  "tokio",
 ]
 
