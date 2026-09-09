@@ -1,9 +1,9 @@
 
 use dbutton_macro::{create_dbutton, dbutton};
 use poise::{serenity_prelude::{
-    ActionRowComponent, ComponentInteraction, CreateActionRow, CreateInputText,
-    CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal, InputTextStyle,
-    ModalInteraction,
+    ActionRowComponent, Colour, ComponentInteraction, CreateActionRow, CreateEmbed,
+    CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateModal,
+    InputTextStyle, ModalInteraction,
 }};
 use rand::RngExt;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
@@ -54,11 +54,24 @@ pub async fn register_minecraft(
 
     ctx.send(
         poise::CreateReply::default()
-            .content(format!(
-                "A registration code has been messaged in game to the Minecraft account `{player}`.
-                Enter it below to link your Discord account to that Minecraft account.
-                If you had not joined the server yet, you will need to join the server and then press \"Send New Code\" to get a new code messaged to you in game."
-            ))
+            .embed(
+                CreateEmbed::new()
+                    .title("Minecraft Registration")
+                    .description(format!(
+                        "A registration code has been messaged in game to the Minecraft account `{player}`."
+                    ))
+                    .field(
+                        "Next steps",
+                        "Enter the code below to link your Discord account to that Minecraft account.",
+                        false,
+                    )
+                    .field(
+                        "Haven't joined the server yet?",
+                        "Join first, then press **Send New Code** to get a new code messaged to you in game.",
+                        false,
+                    )
+                    .colour(Colour::DARK_GREEN),
+            )
             .components(vec![CreateActionRow::Buttons(vec![
                 create_dbutton!(send_new_code, player).label("Send New Code"),
                 create_dbutton!(enter_code).label("Enter Code"),
